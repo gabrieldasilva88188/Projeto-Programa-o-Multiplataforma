@@ -33,22 +33,24 @@ jobs:
 
             echo "=== INICIANDO DEPLOY ==="
 
+            echo "Atualizando repositório..."
+
             cd ~/StackMingWeb
 
-            echo "Atualizando código..."
             git fetch --all
-
-            echo "Checkout da tag..."
-            git checkout $GITHUB_REF_NAME
+            git reset --hard origin/main
+            git clean -fd
 
             if [ "${{ steps.detect.outputs.type }}" = "backend" ]; then
               echo "=== DEPLOY BACKEND ==="
-              docker-compose build backend
+              docker-compose down backend || true
+              docker-compose build --no-cache backend
               docker-compose up -d --build --force-recreate --no-deps backend
 
             else
               echo "=== DEPLOY FRONTEND ==="
-              docker-compose build frontend
+              docker-compose down frontend || true
+              docker-compose build --no-cache frontend
               docker-compose up -d frontend --force-recreate --no-deps frontend
             fi
 
