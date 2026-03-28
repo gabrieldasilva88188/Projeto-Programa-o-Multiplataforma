@@ -63,6 +63,18 @@ cd SEU_REPO
 sudo docker-compose up -d --build
 ```
 
+Comandos uteis
+
+``` bash
+docker system prune -a -f --volumes
+docker system prune -a -f
+
+docker-compose up -d frontend
+docker-compose up -d backend
+docker-compose up -d nodered
+docker-compose up -d mqtt influxdb grafana mysql
+```
+
 ---
 
 # 🔐 ETAPA 2 — CONFIGURAR ACESSO AUTOMÁTICO (CI/CD)

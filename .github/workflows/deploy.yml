@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código da tag
+      - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Detectar tipo (frontend/backend)
+      - name: Detectar tipo
         id: detect
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/frontend-* ]]; then
@@ -23,7 +23,7 @@ jobs:
             echo "type=backend" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy na EC2 via SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -31,22 +31,25 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
 
-            echo "Entrando no servidor..."
+            echo "=== INICIANDO DEPLOY ==="
 
             cd ~/StackMingWeb
 
-            echo "Atualizando repositório..."
+            echo "Atualizando código..."
             git fetch --all
+
+            echo "Checkout da tag..."
             git checkout $GITHUB_REF_NAME
 
-            if [ "${{ steps.detect.outputs.type }}" = "frontend" ]; then
-              echo "Deploy FRONTEND"
-              docker compose build frontend
-              docker compose up -d frontend
+            if [ "${{ steps.detect.outputs.type }}" = "backend" ]; then
+              echo "=== DEPLOY BACKEND ==="
+              docker-compose build backend
+              docker-compose up -d backend
+
             else
-              echo "Deploy BACKEND"
-              docker compose build backend
-              docker compose up -d backend
+              echo "=== DEPLOY FRONTEND ==="
+              docker-compose build frontend
+              docker-compose up -d frontend
             fi
 
-            echo "Deploy finalizado!"
+            echo "=== DEPLOY FINALIZADO ==="
