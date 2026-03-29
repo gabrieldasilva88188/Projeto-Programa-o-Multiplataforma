@@ -1,38 +1,137 @@
-.App {
+body {
+  margin: 0;
+  font-family: "Inter", Arial, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.app {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* NAVBAR */
+.navbar {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: #020617;
+  position: sticky;
+  top: 0;
+}
+
+.navbar a {
+  margin-left: 20px;
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.logo {
+  font-weight: bold;
+}
+
+/* HERO */
+.hero {
+  padding: 100px 20px;
+  background: radial-gradient(circle, #1e293b, #020617);
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  color: #94a3b8;
+  max-width: 600px;
+  margin: 0 auto 30px;
+}
+
+.hero-buttons button {
+  margin: 10px;
+}
+
+/* BUTTONS */
+.primary {
+  background: #38bdf8;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.large {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+}
+
+/* SECTIONS */
+.section {
+  padding: 80px 20px;
+}
+
+.section.dark {
+  background: #020617;
+}
+
+.subtitle {
+  color: #94a3b8;
+  margin-bottom: 40px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+/* ARCHITECTURE */
+.architecture {
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
 }
 
-.App-link {
-  color: #61dafb;
+.box {
+  background: #1e293b;
+  padding: 15px 25px;
+  border-radius: 8px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.arrow {
+  font-size: 1.5rem;
+}
+
+/* CTA */
+.cta-section {
+  padding: 80px 20px;
+  background: #1e293b;
+}
+
+/* FOOTER */
+.footer {
+  padding: 20px;
+  background: #020617;
+  color: #64748b;
 }

@@ -1,262 +1,286 @@
-# VISÃO GERAL
+# Arquitetura de Dados IoT — Stack MING + Stack Web
 
-```text
-Monorepo (main)
- ├── frontend/
- ├── backend/
- └── docker-compose.yml
+## Visão Geral
 
-Deploy:
- ├── Tag frontend-* → deploy só frontend
- └── Tag backend-* → deploy só backend
+Este projeto implementa uma arquitetura moderna orientada a dados para cenários de **IoT (Internet das Coisas)**, separando claramente:
 
-Infra:
- └── AWS EC2 + Docker + GitHub Actions
+* **Ingestão e processamento de dados em tempo real** → *Stack MING*
+* **Consumo, regras de negócio e aplicações** → *Stack Web*
+
+Essa separação permite **escalabilidade, performance e organização dos dados**, especialmente em cenários com alta geração de telemetria.
+
+
+## PARTE 1 — STACK MING (Data Pipeline em Tempo Real)
+
+A **Stack MING** é responsável por capturar, processar e armazenar **dados brutos (raw data)** vindos de dispositivos IoT.
+
+### Componentes
+
+#### 1. MQTT (Message Broker)
+
+**Função:** Comunicação entre dispositivos e sistema
+
+* Protocolo leve baseado em publish/subscribe
+* Ideal para IoT (baixo consumo de banda)
+* Dispositivos (ex: ESP32) publicam dados em tópicos
+
+Exemplo:
+
+```
+device/temperatura → 25.3
+device/umidade → 60%
+```
+
+O MQTT funciona como a **porta de entrada dos dados**
+
+
+#### 2. Node-RED (Orquestração de Fluxos)
+
+**Função:** Processamento e roteamento dos dados
+
+* Ferramenta low-code baseada em fluxos
+* Consome dados do MQTT
+* Permite:
+
+  * Transformação de dados
+  * Filtragem
+  * Enriquecimento
+  * Encaminhamento para bancos
+
+Exemplo de fluxo:
+
+```
+MQTT → Node-RED → InfluxDB
+```
+
+Atua como o **cérebro do pipeline em tempo real**
+
+
+#### 3. InfluxDB (Banco de Dados Time Series)
+
+**Função:** Armazenamento de dados brutos
+
+* Banco otimizado para séries temporais
+* Alta performance para escrita contínua
+* Ideal para telemetria (sensores, logs, métricas)
+
+Estrutura:
+
+* timestamp
+* measurement (ex: temperatura)
+* tags (ex: device_id)
+* fields (valor)
+
+É o **repositório oficial dos dados brutos**
+
+
+#### 4. Grafana (Visualização)
+
+**Função:** Monitoramento em tempo real
+
+* Dashboards interativos
+* Conectado ao InfluxDB
+* Permite visualizar:
+
+  * séries temporais
+  * alertas
+  * métricas em tempo real
+
+É a **camada de observabilidade da stack MING**
+
+
+### Fluxo Completo da Stack MING
+
+```
+[Device IoT]
+     ↓
+   MQTT
+     ↓
+ Node-RED
+     ↓
+ InfluxDB
+     ↓
+  Grafana
 ```
 
 
-# ETAPA 1 — PREPARAR A EC2
+### Papel da Stack MING
 
-## 1. Criar instância na Amazon Web Services
-
-* Tipo: t2.micro (ou maior)
-* SO: Ubuntu 22.04
-* Liberar portas (algumas portas foram trocadas devido a restrição de firewall da instituição):
-
-  * 22 (SSH)
-  * 80 (frontend)
-  * 1883 (mqtt)
-  * 3306 (mysql)  
-  * 8080 (backend)
-  * 8082 (nodered)
-  * 8083 (influxdb)
-  * 8084 (grafana)
+* Alta taxa de ingestão de dados
+* Baixa latência
+* Armazenamento eficiente de telemetria
+* Desacoplamento entre dispositivos e aplicações
 
 
----
+## PARTE 2 — STACK WEB (Aplicação e Negócio)
 
-## 3. Instalar Docker
+A **Stack Web** é responsável por consumir os dados processados e oferecer funcionalidades ao usuário final.
 
-```bash
-sudo apt update
-sudo apt install -y ca-certificates curl gnupg
+### Componentes
 
-sudo install -m 0755 -d /etc/apt/keyrings
+#### 1. Backend
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+**Função:** Regras de negócio e integração
+
+* Desenvolvido em Node.js / Express (ou similar)
+* Responsável por:
+
+  * APIs REST
+  * Processamento de dados consolidados
+  * Integração com banco relacional
+
+Importante:
+O backend **NÃO deve consumir dados brutos diretamente em alta frequência**
 
 
-sudo apt update
+#### 2. Frontend
 
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+**Função:** Interface do usuário
 
-sudo usermod -aG docker ubuntu
-newgrp docker
+* Aplicações web (React, Angular, etc.)
+* Consome APIs do backend
+* Exibe:
 
-sudo systemctl start docker
-sudo systemctl enable docker
+  * dashboards
+  * relatórios
+  * dados consolidados
+
+
+#### 3. MySQL (Banco Relacional)
+
+**Função:** Armazenamento de dados consolidados
+
+* Dados estruturados e organizados
+* Ideal para:
+
+  * relatórios
+  * histórico tratado
+  * dados de negócio
+
+Exemplo:
+
+* média de temperatura por dia
+* alertas registrados
+* eventos processados
+
+
+### Fluxo da Stack Web
+
+```
+InfluxDB → Backend → MySQL → Frontend
 ```
 
 
----
+## PARTE 3 — SEPARAÇÃO: DADOS BRUTOS vs CONSOLIDADOS
 
-## 4. Clonar repositório
+### Dados Brutos (Raw Data)
 
-```bash
-git clone https://github.com/SEU_USUARIO/SEU_REPO.git
-cd SEU_REPO
+* Origem: dispositivos IoT
+* Destino: InfluxDB
 
-sudo docker-compose up -d --build
+Características:
+
+* Alta frequência (ex: a cada segundo)
+* Grande volume
+* Não processados
+* Usados para:
+
+  * monitoramento
+  * análise técnica
+  * auditoria
+
+Exemplo:
+
 ```
-
-Comandos uteis
-
-``` bash
-df -h
-docker system prune -a -f --volumes
-docker system prune -a -f
-
-docker-compose up -d frontend
-docker-compose up -d backend
-docker-compose up -d nodered
-docker-compose up -d mqtt influxdb grafana mysql
-```
-
----
-
-# 🔐 ETAPA 2 — CONFIGURAR ACESSO AUTOMÁTICO (CI/CD)
-
-## 1. Gerar chave SSH na sua instancia da EC2
-
-```bash
-ssh-keygen -t rsa -b 4096 -C "deploy"
-
-cat github.pub >> ~/.ssh/authorized_keys
+timestamp: 10:00:01 → temperatura: 25.1
+timestamp: 10:00:02 → temperatura: 25.2
+timestamp: 10:00:03 → temperatura: 25.3
 ```
 
 
-## 2. Ajustar permissões
+### Dados Consolidados (Processed Data)
 
-```bash
-chmod 700 ~/.ssh
-chmod 600 ~/.ssh/authorized_keys
+* Origem: backend
+* Destino: MySQL
+
+Características:
+
+* Agregados e tratados
+* Baixa frequência
+* Estruturados para negócio
+
+Exemplo:
+
 ```
-
-## 3. Copiar a chave
-
-```bash
-cat github
-```
-
-Vai aparecer algo assim:
-```bash
------BEGIN RSA PRIVATE KEY-----
-...
------END RSA PRIVATE KEY-----
-```
-
-Copie tudo inclusive o BEGIN e o END
-
-
-## 4. Adicionar chave privada no GitHub
-
-“New repository secret”
-
-E crie 3 secrets
-
-Name: EC2_HOST
-Value: 3.23.104.248
-
-Name: EC2_USER
-Value: ubuntu
-
-Name: EC2_SSH_KEY (o mais importante)
-Value: Cole TUDO, exatamente assim:
-
------BEGIN RSA PRIVATE KEY-----
-xxxxx
-xxxxx
------END RSA PRIVATE KEY-----
-
-
-# ETAPA 3 — GERAR RELEASES PARCIAIS
-
-## FRONTEND
-
-```bash
-git tag frontend-v1.0.0 $(git subtree split --prefix=frontend)
-git push origin frontend-v1.0.0
-```
-
----
-
-## BACKEND
-
-```bash
-git tag backend-v1.0.0 $(git subtree split --prefix=backend)
-git push origin backend-v1.0.0
-```
-
----
-
-# ETAPA 4 — GITHUB ACTIONS (CI/CD)
-
-Crie:
-
-```text
-.github/workflows/deploy.yml
-```
-
----
-
-## deploy.yml COMPLETO
-
-```yaml
-name: Deploy EC2
-
-on:
-  push:
-    tags:
-      - 'frontend-*'
-      - 'backend-*'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Detectar tipo
-        id: detect
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/frontend-* ]]; then
-            echo "type=frontend" >> $GITHUB_OUTPUT
-          else
-            echo "type=backend" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-
-            echo "=== INICIANDO DEPLOY ==="
-
-            cd ~/StackMingWeb
-
-            echo "Atualizando código..."
-            git fetch --all
-
-            echo "Checkout da tag..."
-            git checkout $GITHUB_REF_NAME
-
-            if [ "${{ steps.detect.outputs.type }}" = "backend" ]; then
-              echo "=== DEPLOY BACKEND ==="
-              docker-compose build backend
-              docker-compose up -d --build --force-recreate --no-deps backend
-
-            else
-              echo "=== DEPLOY FRONTEND ==="
-              docker-compose build frontend
-              docker-compose up -d frontend --force-recreate --no-deps frontend
-            fi
-
-            echo "=== DEPLOY FINALIZADO ==="
+data: 2026-03-28
+temperatura_media: 25.2
+temperatura_max: 26.1
 ```
 
 
-# ETAPA 5 — DEPLOY
+## POR QUE SEPARAR?
 
-## 1. Fazer alteração no backend
+### Problema (sem separação)
 
-```bash
-git add .
-git commit -m "update backend"
-git push
+Se o backend consumir diretamente dados brutos:
+
+* Sobrecarga de processamento
+* Alto consumo de CPU/memória
+* Gargalos de performance
+* APIs lentas
+* Dificuldade de escala
+
+
+### Solução (arquitetura com MING)
+
+A Stack MING **absorve toda a carga de telemetria**, enquanto o backend trabalha apenas com dados relevantes.
+
+
+
+## ARQUITETURA FINAL (ENTERPRISE)
+
+> “Quem gera muito dado não deve conversar direto com quem atende o usuário”
+
+```
+             ┌────────────────────┐
+             │   Device (IoT)     │
+             └────────┬───────────┘
+                      ↓
+                 [ MQTT ]
+                      ↓
+               [ Node-RED ]
+                      ↓
+               [ InfluxDB ]  ← Dados Brutos
+                      ↓
+         ┌────────────┴────────────┐
+         ↓                         ↓
+    [ Grafana ]            [ Backend API ]
+                                ↓
+                           [ MySQL ]  ← Dados Consolidados
+                                ↓
+                           [ Frontend ]
 ```
 
----
 
-## 2. Criar release frontend
+## BENEFÍCIOS DA ARQUITETURA
 
-```bash
-git tag backend-v1.0.4
-git push origin backend-v1.0.4
-```
+✔ Alta escalabilidade
+✔ Separação de responsabilidades
+✔ Performance otimizada
+✔ Backend desacoplado da telemetria
+✔ Melhor organização dos dados
+✔ Facilidade para analytics e IA no futuro
 
----
 
-## RESULTADO
+## CONCLUSÃO
 
-Automaticamente:
+A combinação da **Stack MING + Stack Web** cria uma arquitetura robusta e pronta para cenários reais de IoT e Big Data.
 
-* GitHub Actions roda
-* conecta na EC2
-* faz checkout da tag
-* builda container
-* sobe serviço atualizado
+* A **Stack MING** resolve o problema de ingestão massiva
+* A **Stack Web** resolve o problema de entrega de valor ao usuário
+
+Juntas, permitem evoluir facilmente para:
+
+* Machine Learning
+* Analytics avançado
+* Sistemas preditivos
