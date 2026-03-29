@@ -264,11 +264,11 @@ A Stack MING **absorve toda a carga de telemetria**, enquanto o backend trabalha
 
 ## BENEFÍCIOS DA ARQUITETURA
 
-✔ Alta escalabilidade
-✔ Separação de responsabilidades
-✔ Performance otimizada
-✔ Backend desacoplado da telemetria
-✔ Melhor organização dos dados
+✔ Alta escalabilidade <br>
+✔ Separação de responsabilidades <br>
+✔ Performance otimizada <br>
+✔ Backend desacoplado da telemetria <br>
+✔ Melhor organização dos dados <br>
 ✔ Facilidade para analytics e IA no futuro
 
 
