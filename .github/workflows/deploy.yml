@@ -43,15 +43,15 @@ jobs:
 
             if [ "${{ steps.detect.outputs.type }}" = "backend" ]; then
               echo "=== DEPLOY BACKEND ==="
-              docker-compose down backend || true
-              docker-compose build --no-cache backend
-              docker-compose up -d --build --force-recreate --no-deps backend
+              docker compose stop backend || true
+              docker compose rm -f backend || true
+              docker compose up -d --build --force-recreate --no-deps backend
 
             else
               echo "=== DEPLOY FRONTEND ==="
-              docker-compose down frontend || true
-              docker-compose build --no-cache frontend
-              docker-compose up -d frontend --force-recreate --no-deps frontend
+              docker compose stop frontend || true
+              docker compose rm -f frontend || true
+              docker compose up -d --build --force-recreate --no-deps frontend
             fi
 
             echo "=== DEPLOY FINALIZADO ==="
