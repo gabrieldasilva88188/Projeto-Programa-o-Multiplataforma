@@ -1,5 +1,7 @@
 # Arquitetura de Dados IoT — Stack MING + Stack Web
 
+[Playlist Youtube](https://www.youtube.com/playlist?list=PLYUDPcYmk9tgXM9M3PR0Ak5KVkwjpT1L1)
+
 ## Visão Geral
 
 Este projeto implementa uma arquitetura moderna orientada a dados para cenários de **IoT (Internet das Coisas)**, separando claramente:
