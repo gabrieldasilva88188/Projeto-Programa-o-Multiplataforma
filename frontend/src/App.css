@@ -13,10 +13,12 @@ body {
 .navbar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 20px 40px;
   background: #020617;
   position: sticky;
   top: 0;
+  z-index: 100;
 }
 
 .navbar a {
@@ -27,6 +29,23 @@ body {
 
 .logo {
   font-weight: bold;
+}
+
+.nav-dashboard {
+  margin-left: 24px;
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.nav-dashboard:hover {
+  background: #7dd3fc;
 }
 
 /* HERO */
@@ -53,11 +72,17 @@ body {
 /* BUTTONS */
 .primary {
   background: #38bdf8;
+  color: #0f172a;
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  transition: background 0.15s;
+}
+
+.primary:hover {
+  background: #7dd3fc;
 }
 
 .secondary {
@@ -67,6 +92,11 @@ body {
   padding: 12px 24px;
   border-radius: 8px;
   cursor: pointer;
+  transition: background 0.15s;
+}
+
+.secondary:hover {
+  background: rgba(56, 189, 248, 0.08);
 }
 
 .large {
@@ -92,6 +122,14 @@ body {
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.grid-lg {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
   max-width: 900px;
   margin: auto;
