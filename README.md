@@ -1,4 +1,4 @@
-# 🌱 PBL1 — Sistema de Monitoramento de Estufa
+# PBL1 — Sistema de Monitoramento de Estufa
 
 Monitoramento inteligente de ambientes agrícolas em tempo real usando a Stack MING + Stack Web.
 
@@ -6,7 +6,7 @@ Monitoramento inteligente de ambientes agrícolas em tempo real usando a Stack M
 
 ---
 
-## 📋 Sumário
+## Sumário
 
 - [Stack utilizada](#stack-utilizada)
 - [Arquitetura](#arquitetura)
@@ -179,7 +179,7 @@ npm start
 
 Abrir `/iot/simulador_estufa.ipynb`, atualizar o IP do broker e rodar todas as células.
 
-> ⚠️ **Ao reiniciar a EC2** o IP público muda. Atualizar: `backend/.env`, `frontend/.env`, `GrafanaDashboard.tsx` e o Colab.
+> **Ao reiniciar a EC2** o IP público muda. Atualizar: `backend/.env`, `frontend/.env`, `GrafanaDashboard.tsx` e o Colab.
 
 ---
 
