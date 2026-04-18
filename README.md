@@ -1,288 +1,253 @@
-# Arquitetura de Dados IoT — Stack MING + Stack Web
+# 🌱 PBL1 — Sistema de Monitoramento de Estufa
 
-[Playlist Youtube](https://www.youtube.com/playlist?list=PLYUDPcYmk9tgXM9M3PR0Ak5KVkwjpT1L1)
+Monitoramento inteligente de ambientes agrícolas em tempo real usando a Stack MING + Stack Web.
 
-## Visão Geral
+> **Problema:** Pequenas variações de temperatura, umidade ou luminosidade podem comprometer toda uma produção vegetal. Este sistema monitora continuamente 4 variáveis ambientais e dispara alertas automáticos quando qualquer valor sai da faixa segura para as plantas.
 
-Este projeto implementa uma arquitetura moderna orientada a dados para cenários de **IoT (Internet das Coisas)**, separando claramente:
+---
 
-* **Ingestão e processamento de dados em tempo real** → *Stack MING*
-* **Consumo, regras de negócio e aplicações** → *Stack Web*
+## 📋 Sumário
 
-Essa separação permite **escalabilidade, performance e organização dos dados**, especialmente em cenários com alta geração de telemetria.
+- [Stack utilizada](#stack-utilizada)
+- [Arquitetura](#arquitetura)
+- [Estrutura do repositório](#estrutura-do-repositório)
+- [Variáveis monitoradas](#variáveis-monitoradas)
+- [Como executar](#como-executar)
+- [Endpoints da API](#endpoints-da-api)
+- [Fluxo de dados](#fluxo-de-dados)
 
+---
 
-## PARTE 1 — STACK MING (Data Pipeline em Tempo Real)
+## Stack utilizada
 
-A **Stack MING** é responsável por capturar, processar e armazenar **dados brutos (raw data)** vindos de dispositivos IoT.
+| Camada | Tecnologia | Função |
+|--------|-----------|--------|
+| IoT | Google Colab + Python | Simula sensores ESP32 via MQTT |
+| Mensageria | Eclipse Mosquitto | Broker MQTT :1883 |
+| Orquestração | Node-RED | Processa MQTT e grava no InfluxDB |
+| Time series | InfluxDB 2.x | Armazena leituras brutas dos sensores |
+| Monitoramento | Grafana | Dashboard em tempo real |
+| Backend | Node.js + Express | API REST + consolidação + alertas |
+| Banco relacional | MySQL 8.4 | Dados consolidados e alertas |
+| Frontend | React + TypeScript | Dashboard do produtor |
+| Infraestrutura | AWS EC2 + Docker | Hospeda a Stack MING |
 
-### Componentes
+---
 
-#### 1. MQTT (Message Broker)
-
-**Função:** Comunicação entre dispositivos e sistema
-
-* Protocolo leve baseado em publish/subscribe
-* Ideal para IoT (baixo consumo de banda)
-* Dispositivos (ex: ESP32) publicam dados em tópicos
-
-Exemplo:
-
-```
-device/temperatura → 25.3
-device/umidade → 60%
-```
-
-O MQTT funciona como a **porta de entrada dos dados**
-
-
-#### 2. Node-RED (Orquestração de Fluxos)
-
-**Função:** Processamento e roteamento dos dados
-
-* Ferramenta low-code baseada em fluxos
-* Consome dados do MQTT
-* Permite:
-
-  * Transformação de dados
-  * Filtragem
-  * Enriquecimento
-  * Encaminhamento para bancos
-
-Exemplo de fluxo:
+## Arquitetura
 
 ```
-MQTT → Node-RED → InfluxDB
+[Google Colab — simula ESP32]
+        |
+        | MQTT (fatec/pbl01)
+        ↓
+[Eclipse Mosquitto :1883]  ← EC2
+        |
+        ↓
+[Node-RED :8082]           ← EC2
+        |
+        ↓
+[InfluxDB :8083]           ← EC2
+        |
+        ├──→ [Grafana :8084]         ← tempo real
+        |
+        └──→ [Backend :8080]         ← consolida a cada 30s
+                    |
+                    ↓
+               [MySQL :3307]
+                    |
+                    ↓
+             [Frontend :3000]        ← atualiza a cada 5s
 ```
 
-Atua como o **cérebro do pipeline em tempo real**
+---
 
-
-#### 3. InfluxDB (Banco de Dados Time Series)
-
-**Função:** Armazenamento de dados brutos
-
-* Banco otimizado para séries temporais
-* Alta performance para escrita contínua
-* Ideal para telemetria (sensores, logs, métricas)
-
-Estrutura:
-
-* timestamp
-* measurement (ex: temperatura)
-* tags (ex: device_id)
-* fields (valor)
-
-É o **repositório oficial dos dados brutos**
-
-
-#### 4. Grafana (Visualização)
-
-**Função:** Monitoramento em tempo real
-
-* Dashboards interativos
-* Conectado ao InfluxDB
-* Permite visualizar:
-
-  * séries temporais
-  * alertas
-  * métricas em tempo real
-
-É a **camada de observabilidade da stack MING**
-
-
-### Fluxo Completo da Stack MING
+## Estrutura do repositório
 
 ```
-[Device IoT]
-     ↓
-   MQTT
-     ↓
- Node-RED
-     ↓
- InfluxDB
-     ↓
-  Grafana
+StackMingWeb/
+├── /iot
+│   └── simulador_estufa.ipynb   # Simulador de sensores (substitui ESP32/Wokwi)
+│
+├── /nodered
+│   └── flows.json               # Fluxo exportado do Node-RED
+│
+├── /backend
+│   ├── src/
+│   │   ├── index.js             # Entry point
+│   │   ├── app.js               # Express + middlewares
+│   │   ├── db/
+│   │   │   ├── influx.js        # Queries Flux ao InfluxDB
+│   │   │   ├── migrate.js       # Criação das tabelas MySQL
+│   │   │   └── seed.js          # Inserção inicial de sensores
+│   │   ├── routes/
+│   │   │   ├── sensors.js       # CRUD de sensores
+│   │   │   ├── metrics.js       # Consulta de métricas
+│   │   │   └── alerts.js        # Gerenciamento de alertas
+│   │   └── jobs/
+│   │       └── consolidation.js # Job de consolidação + alertas automáticos
+│   └── package.json
+│
+├── /frontend
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx         # Painel principal IoT
+│   │   │   └── GrafanaDashboard.tsx  # Iframe Grafana
+│   │   ├── components/               # MetricCard, SensorTable, AlertFeed, Sparkline
+│   │   ├── hooks/
+│   │   │   └── useIoTData.ts         # Polling automático a cada 5s
+│   │   └── services/
+│   │       └── api.ts                # Chamadas REST ao backend
+│   └── package.json
+│
+├── /docs
+│   └── PBL1_Monitoramento_Estufa_Final.docx  # Documentação completa
+│
+└── docker-compose.yml           # Orquestração da Stack MING na EC2
 ```
 
+---
 
-### Papel da Stack MING
+## Variáveis monitoradas
 
-* Alta taxa de ingestão de dados
-* Baixa latência
-* Armazenamento eficiente de telemetria
-* Desacoplamento entre dispositivos e aplicações
+| Variável | Faixa ideal | Alerta | Crítico | Impacto fora da faixa |
+|----------|-------------|--------|---------|----------------------|
+| Temperatura | 18 a 28 °C | > 28 °C | > 35 °C | Estresse térmico, queima de folhas |
+| Umidade | 50 a 70% | > 70% | > 80% | Fungos, podridão de raízes |
+| Luminosidade | 200 a 800 lux | > 1500 lux | > 1800 lux | Fotoinibição ou etiolamento |
+| Qualidade do ar (CO₂) | 400 a 600 ppm | > 600 ppm | > 800 ppm | Fotossíntese limitada |
 
+---
 
-## PARTE 2 — STACK WEB (Aplicação e Negócio)
+## Como executar
 
-A **Stack Web** é responsável por consumir os dados processados e oferecer funcionalidades ao usuário final.
+### Pré-requisitos
 
-### Componentes
+- AWS EC2 com Ubuntu 22.04 + Docker + Docker Compose
+- Node.js v18+ na máquina local
+- Google Colab para o simulador
 
-#### 1. Backend
+### 1. EC2 — Stack MING
 
-**Função:** Regras de negócio e integração
-
-* Desenvolvido em Node.js / Express (ou similar)
-* Responsável por:
-
-  * APIs REST
-  * Processamento de dados consolidados
-  * Integração com banco relacional
-
-Importante:
-O backend **NÃO deve consumir dados brutos diretamente em alta frequência**
-
-
-#### 2. Frontend
-
-**Função:** Interface do usuário
-
-* Aplicações web (React, Angular, etc.)
-* Consome APIs do backend
-* Exibe:
-
-  * dashboards
-  * relatórios
-  * dados consolidados
-
-
-#### 3. MySQL (Banco Relacional)
-
-**Função:** Armazenamento de dados consolidados
-
-* Dados estruturados e organizados
-* Ideal para:
-
-  * relatórios
-  * histórico tratado
-  * dados de negócio
-
-Exemplo:
-
-* média de temperatura por dia
-* alertas registrados
-* eventos processados
-
-
-### Fluxo da Stack Web
-
-```
-InfluxDB → Backend → MySQL → Frontend
+```bash
+git clone https://github.com/profAndreSouza/StackMingWeb.git
+cd StackMingWeb
+docker-compose up -d
 ```
 
+### 2. Local — Backend
 
-## PARTE 3 — SEPARAÇÃO: DADOS BRUTOS vs CONSOLIDADOS
+Criar `backend/.env`:
 
-### Dados Brutos (Raw Data)
-
-* Origem: dispositivos IoT
-* Destino: InfluxDB
-
-Características:
-
-* Alta frequência (ex: a cada segundo)
-* Grande volume
-* Não processados
-* Usados para:
-
-  * monitoramento
-  * análise técnica
-  * auditoria
-
-Exemplo:
-
-```
-timestamp: 10:00:01 → temperatura: 25.1
-timestamp: 10:00:02 → temperatura: 25.2
-timestamp: 10:00:03 → temperatura: 25.3
+```env
+INFLUX_URL=http://IP_DA_EC2:8083
+INFLUX_TOKEN=seu_token_aqui
+INFLUX_ORG=my-org
+INFLUX_BUCKET=iot-sensors
+MYSQL_HOST=localhost
+MYSQL_PORT=3307
+MYSQL_DATABASE=iot_consolidated
+MYSQL_USER=iot_user
+MYSQL_PASSWORD=iot_pass
+USE_MOCK=false
+CONSOLIDATION_CRON=*/30 * * * * *
+CONSOLIDATION_WINDOW_MINUTES=5
 ```
 
-
-### Dados Consolidados (Processed Data)
-
-* Origem: backend
-* Destino: MySQL
-
-Características:
-
-* Agregados e tratados
-* Baixa frequência
-* Estruturados para negócio
-
-Exemplo:
-
-```
-data: 2026-03-28
-temperatura_media: 25.2
-temperatura_max: 26.1
+```bash
+cd backend
+npm install
+npm run seed   # apenas na primeira execução
+npm start
 ```
 
+### 3. Local — Frontend
 
-## POR QUE SEPARAR?
+Criar `frontend/.env`:
 
-### Problema (sem separação)
-
-Se o backend consumir diretamente dados brutos:
-
-* Sobrecarga de processamento
-* Alto consumo de CPU/memória
-* Gargalos de performance
-* APIs lentas
-* Dificuldade de escala
-
-
-### Solução (arquitetura com MING)
-
-A Stack MING **absorve toda a carga de telemetria**, enquanto o backend trabalha apenas com dados relevantes.
-
-
-
-## ARQUITETURA FINAL (ENTERPRISE)
-
-> “Quem gera muito dado não deve conversar direto com quem atende o usuário”
-
-```
-             ┌────────────────────┐
-             │   Device (IoT)     │
-             └────────┬───────────┘
-                      ↓
-                 [ MQTT ]
-                      ↓
-               [ Node-RED ]
-                      ↓
-               [ InfluxDB ]  ← Dados Brutos
-                      ↓
-         ┌────────────┴────────────┐
-         ↓                         ↓
-    [ Grafana ]            [ Backend API ]
-                                ↓
-                           [ MySQL ]  ← Dados Consolidados
-                                ↓
-                           [ Frontend ]
+```env
+VITE_API_URL=http://localhost:8080
 ```
 
+```bash
+cd frontend
+npm install
+npm start
+```
 
-## BENEFÍCIOS DA ARQUITETURA
+### 4. Google Colab — Simulador
 
-✔ Alta escalabilidade <br>
-✔ Separação de responsabilidades <br>
-✔ Performance otimizada <br>
-✔ Backend desacoplado da telemetria <br>
-✔ Melhor organização dos dados <br>
-✔ Facilidade para analytics e IA no futuro
+Abrir `/iot/simulador_estufa.ipynb`, atualizar o IP do broker e rodar todas as células.
 
+> ⚠️ **Ao reiniciar a EC2** o IP público muda. Atualizar: `backend/.env`, `frontend/.env`, `GrafanaDashboard.tsx` e o Colab.
 
-## CONCLUSÃO
+---
 
-A combinação da **Stack MING + Stack Web** cria uma arquitetura robusta e pronta para cenários reais de IoT e Big Data.
+## Endpoints da API
 
-* A **Stack MING** resolve o problema de ingestão massiva
-* A **Stack Web** resolve o problema de entrega de valor ao usuário
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/api/health` | Status da API |
+| GET | `/api/sensors` | Lista todos os sensores |
+| GET | `/api/sensors/:id` | Detalhe de um sensor |
+| PATCH | `/api/sensors/:id` | Atualiza nome/localização |
+| GET | `/api/metrics` | Resumo das métricas (última janela 5min) |
+| GET | `/api/metrics/:metric/trend` | Série histórica para sparklines |
+| GET | `/api/alerts` | Lista alertas (`?resolved=false\|true\|all`) |
+| PATCH | `/api/alerts/:id/resolve` | Resolve um alerta |
 
-Juntas, permitem evoluir facilmente para:
+---
 
-* Machine Learning
-* Analytics avançado
-* Sistemas preditivos
+## Fluxo de dados
+
+### Dados enviados pelo simulador (JSON via MQTT)
+
+```json
+{
+  "temperatura": 24.7,
+  "umidade": 58.3,
+  "luminosidade": 642.5,
+  "qualidade_ar": 387,
+  "timestamp": "20260417092519"
+}
+```
+
+**Tópico:** `fatec/pbl01` | **Intervalo:** 5 segundos | **QoS:** 0
+
+### Pipeline Node-RED → InfluxDB
+
+O Node-RED assina `fatec/pbl01`, converte o payload JSON e grava no InfluxDB com:
+
+```
+_measurement = iot-sensors
+_field       = temperatura | umidade | luminosidade | qualidade_ar
+_value       = número float
+_time        = timestamp UTC automático
+```
+
+### Backend → MySQL (job de consolidação)
+
+A cada 30 segundos o backend:
+1. Busca leituras dos últimos 5 minutos no InfluxDB
+2. Calcula avg/min/max por sensor + métrica
+3. Persiste em `metrics_consolidated` no MySQL
+4. Verifica thresholds e gera alertas automáticos
+5. Atualiza status dos sensores
+
+---
+
+## Portas na EC2
+
+| Serviço | Porta |
+|---------|-------|
+| MQTT | 1883 |
+| Node-RED | 8082 |
+| InfluxDB | 8083 |
+| Grafana | 8084 |
+| Backend API | 8080 |
+| MySQL | 3307 |
+| Frontend | 80 |
+
+---
+
+*Programação Multiplataforma — Prof. André Souza — PBL1 2026*
