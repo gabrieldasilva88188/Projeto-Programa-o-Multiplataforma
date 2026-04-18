@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import "./App.css";
 import { Dashboard } from "./pages/Dashboard";
+import GrafanaDashboard from "./pages/GrafanaDashboard";
 
-function LandingPage({ onEnter }: { onEnter: () => void }) {
+function LandingPage({ onEnter, onGrafana }: { onEnter: () => void; onGrafana: () => void }) {
   return (
     <div className="app">
       <header className="navbar">
@@ -11,6 +12,9 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
           <a href="#ming">MING</a>
           <a href="#web">Web</a>
           <a href="#arquitetura">Arquitetura</a>
+          <button className="nav-dashboard" onClick={onGrafana}>
+            Grafana →
+          </button>
           <button className="nav-dashboard" onClick={onEnter}>
             Dashboard →
           </button>
@@ -26,7 +30,7 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
           </p>
           <div className="hero-buttons">
             <button className="primary" onClick={onEnter}>Ver Dashboard</button>
-            <button className="secondary">Ver Arquitetura</button>
+            <button className="secondary" onClick={onGrafana}>Ver Grafana</button>
           </div>
         </div>
       </section>
@@ -68,7 +72,10 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       <section className="cta-section">
         <h2>Pronto para escalar seu projeto IoT?</h2>
-        <button className="primary large" onClick={onEnter}>Abrir Dashboard</button>
+        <div className="hero-buttons">
+          <button className="primary large" onClick={onEnter}>Abrir Dashboard</button>
+          <button className="secondary large" onClick={onGrafana}>Abrir Grafana</button>
+        </div>
       </section>
 
       <footer className="footer">
@@ -79,13 +86,32 @@ function LandingPage({ onEnter }: { onEnter: () => void }) {
 }
 
 function App() {
-  const [view, setView] = useState<"landing" | "dashboard">("landing");
+  const [view, setView] = useState<"landing" | "dashboard" | "grafana">("landing");
 
   if (view === "dashboard") {
     return <Dashboard onBack={() => setView("landing")} />;
   }
 
-  return <LandingPage onEnter={() => setView("dashboard")} />;
+  if (view === "grafana") {
+    return (
+      <div style={{ position: "relative" }}>
+        <button
+          onClick={() => setView("landing")}
+          style={{
+            position: "fixed", top: "12px", left: "12px", zIndex: 9999,
+            background: "#1e293b", color: "#fff", border: "none",
+            borderRadius: "8px", padding: "8px 16px", cursor: "pointer",
+            fontSize: "14px"
+          }}
+        >
+          ← Voltar
+        </button>
+        <GrafanaDashboard />
+      </div>
+    );
+  }
+
+  return <LandingPage onEnter={() => setView("dashboard")} onGrafana={() => setView("grafana")} />;
 }
 
 export default App;

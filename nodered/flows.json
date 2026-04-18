@@ -1,0 +1,43 @@
+[
+    {
+        "id": "04f26cd17ddfff68",
+        "type": "influxdb out",
+        "z": "e74fecc6faadca8d",
+        "influxdb": "9bdd34f74bb56ca6",
+        "name": "enviar para o banco",
+        "measurement": "iot-sensors",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "my-org",
+        "bucket": "iot-sensors",
+        "x": 900,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "9bdd34f74bb56ca6",
+        "type": "influxdb",
+        "hostname": "http://influxdb",
+        "port": 8086,
+        "protocol": "http",
+        "database": "database",
+        "name": "",
+        "usetls": true,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://influxdb:8086",
+        "timeout": 10,
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "eb3c7d09bbda68e3",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-influxdb": "0.7.0"
+        }
+    }
+]

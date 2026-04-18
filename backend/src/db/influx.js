@@ -63,7 +63,7 @@ function getInfluxClient() {
   const { InfluxDB } = require("@influxdata/influxdb-client");
   const client = new InfluxDB({
     url:   process.env.INFLUX_URL   || "http://localhost:8086",
-    token: process.env.INFLUX_TOKEN || "",
+    token: process.env.INFLUX_TOKEN || "vWI_a1wDuFRUO83UOwlj_SMaNpo5-wEFrugWiZ6lBNuor2uYUYeDHha1s4djwqscsCmtrkxSAl40mJQlkETcBQ==",
   });
   influxQueryApi = client.getQueryApi(process.env.INFLUX_ORG || "my-org");
   return influxQueryApi;
@@ -80,9 +80,16 @@ async function getRealReadings(windowMinutes = 5) {
   const flux = `
     from(bucket: "${bucket}")
       |> range(start: -${windowMinutes}m)
-      |> filter(fn: (r) => r._measurement == "sensor_reading")
-      |> pivot(rowKey:["_time","sensor_id"], columnKey: ["_field"], valueColumn: "_value")
+      |> filter(fn: (r) => r._measurement == "iot-sensors")
+      |> filter(fn: (r) => r._field == "temperatura" or r._field == "umidade" or r._field == "luminosidade" or r._field == "qualidade_ar")
   `;
+
+  const FIELD_MAP = {
+    temperatura:   { metric: "temperature", unit: "°C"  },
+    umidade:       { metric: "humidity",    unit: "%"   },
+    luminosidade:  { metric: "luminosity",  unit: "lux" },
+    qualidade_ar:  { metric: "co2",         unit: "ppm" },
+  };
 
   const readings = [];
 
@@ -90,12 +97,13 @@ async function getRealReadings(windowMinutes = 5) {
     queryApi.queryRows(flux, {
       next(row, tableMeta) {
         const obj = tableMeta.toObject(row);
-        // Cada linha tem: sensor_id, metric, value, unit, _time
+        const mapped = FIELD_MAP[obj._field];
+        if (!mapped) return;
         readings.push({
-          sensorId:  obj.sensor_id,
-          metric:    obj.metric,
-          value:     parseFloat(obj.value),
-          unit:      obj.unit || "",
+          sensorId:  obj.sensor_id || "s1",
+          metric:    mapped.metric,
+          value:     parseFloat(obj._value),
+          unit:      mapped.unit,
           timestamp: new Date(obj._time),
         });
       },

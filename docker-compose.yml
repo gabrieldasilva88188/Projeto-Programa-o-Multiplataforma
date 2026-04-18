@@ -69,15 +69,15 @@ services:
       MYSQL_USER:                     iot_user
       MYSQL_PASSWORD:                 iot_pass
       # InfluxDB
-      INFLUX_URL:                     http://influxdb:8083
-      INFLUX_TOKEN:                   9oCip6Zjp4mfgBOUBy7AbFgWF8mDJ2Pip16J9sBRhWsCeuCnkPYyJN38oGX5wZC4hK19AFEeQ7xLBxLLttgxkQ==
+      INFLUX_URL:                     http://18.212.240.158:8083
+      INFLUX_TOKEN:                   vWI_a1wDuFRUO83UOwlj_SMaNpo5-wEFrugWiZ6lBNuor2uYUYeDHha1s4djwqscsCmtrkxSAl40mJQlkETcBQ==
       INFLUX_ORG:                     my-org
       INFLUX_BUCKET:                  iot-sensors
       # Pipeline
       CONSOLIDATION_CRON:             "*/30 * * * * *"
       CONSOLIDATION_WINDOW_MINUTES:   5
       # Mock — troque para "false" quando o InfluxDB tiver dados reais
-      USE_MOCK:                       "true"
+      USE_MOCK:                       "false"
     depends_on:
       mysql:
         condition: service_healthy
@@ -99,7 +99,7 @@ services:
       MYSQL_USER:          iot_user
       MYSQL_PASSWORD:      iot_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

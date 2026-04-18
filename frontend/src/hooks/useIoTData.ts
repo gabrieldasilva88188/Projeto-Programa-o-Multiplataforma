@@ -20,7 +20,7 @@ const METRIC_META: Record<string, {
   noise:       { label: "Ruído",         icon: "🔊", min: 0,   max: 120,  threshold: { warn: 70,   danger: 90   } },
 };
 
-const POLL_INTERVAL_MS = 30_000; // 30 segundos
+const POLL_INTERVAL_MS = 5_000; 
 
 // ─── Montagem dos SensorMetric completos ─────────────────
 
